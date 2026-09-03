@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { TopNav } from './components/TopNav';
 import { TopologyGraph } from './components/TopologyGraph';
@@ -8,15 +8,55 @@ import { LangGraphWorkflowTrace } from './components/LangGraphWorkflowTrace';
 import { IntegrationsPage } from './components/IntegrationsPage';
 import { IncidentsPage } from './components/IncidentsPage';
 import { ApprovalModal } from './components/ApprovalModal';
-import { Cpu, AlertTriangle, Database, Activity, ShieldCheck, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Cpu, AlertTriangle, Database, Activity, Radio, CheckCircle2 } from 'lucide-react';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [isSimulating, setIsSimulating] = useState(false);
   const [isApprovalOpen, setIsApprovalOpen] = useState(false);
+  const [liveWsEvents, setLiveWsEvents] = useState<any[]>([]);
+  const [wsConnected, setWsConnected] = useState<boolean>(false);
 
-  const triggerSimulation = () => {
+  // WebSocket Connection to Real-Time Backend Event Stream
+  useEffect(() => {
+    let ws: WebSocket | null = null;
+    try {
+      ws = new WebSocket('ws://localhost:4000/ws');
+
+      ws.onopen = () => {
+        console.log('[React WS Client] Connected to ws://localhost:4000/ws');
+        setWsConnected(true);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('[React WS Client] Live Event Received:', data);
+          setLiveWsEvents((prev) => [data, ...prev.slice(0, 4)]);
+        } catch (e) {
+          console.error(e);
+        }
+      };
+
+      ws.onclose = () => {
+        setWsConnected(false);
+      };
+    } catch (err) {
+      console.warn('WebSocket connection error:', err);
+    }
+
+    return () => {
+      if (ws) ws.close();
+    };
+  }, []);
+
+  const triggerSimulation = async () => {
     setIsSimulating(true);
+    try {
+      await fetch('/api/v1/workflows/trigger', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+    } catch (e) {
+      console.warn(e);
+    }
     setTimeout(() => {
       setIsSimulating(false);
       setIsApprovalOpen(true);
@@ -41,6 +81,22 @@ export function App() {
         />
 
         <main className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Real-time WebSocket Live Feed Banner */}
+          <div className="stitch-card p-3 bg-slate-900/90 border-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-2.5 text-xs font-mono">
+              <Radio className={`h-4 w-4 ${wsConnected ? 'text-emerald-400 animate-pulse' : 'text-slate-500'}`} />
+              <span className="text-slate-300">WebSocket Live Stream:</span>
+              <span className={wsConnected ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
+                {wsConnected ? 'CONNECTED (ws://localhost:4000/ws)' : 'DISCONNECTED (Mock Mode Active)'}
+              </span>
+            </div>
+            {liveWsEvents.length > 0 && (
+              <span className="label-caps bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded truncate max-w-md">
+                Latest Event: {liveWsEvents[0].type || liveWsEvents[0].message}
+              </span>
+            )}
+          </div>
+
           {/* Mission Control Overview */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
