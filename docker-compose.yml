@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  neo4j:
+    image: neo4j:5.26-community
+    container_name: deployguard-neo4j
+    ports:
+      - "7474:7474" # HTTP Browser
+      - "7687:7687" # Bolt Protocol
+    environment:
+      - NEO4J_AUTH=neo4j/deployguard_secret
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+    volumes:
+      - neo4j_data:/data
+
+  backend:
+    build:
+      context: ./backend
+    container_name: deployguard-backend
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - NEO4J_URI=neo4j://neo4j:7687
+      - NEO4J_USERNAME=neo4j
+      - NEO4J_PASSWORD=deployguard_secret
+    depends_on:
+      - neo4j
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: deployguard-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  neo4j_data:

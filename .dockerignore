@@ -1,0 +1,9 @@
+# Root Docker Ignore
+node_modules
+**/node_modules
+**/dist
+.env
+.env.local
+.git
+.vscode
+.idea

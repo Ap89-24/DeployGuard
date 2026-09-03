@@ -1,0 +1,33 @@
+{
+  "name": "deployguard-backend",
+  "version": "1.0.0",
+  "description": "DeployGuard AI Backend API, Neo4j Vector Memory & LangGraph Engine",
+  "main": "dist/server.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx watch src/server.ts",
+    "init-db": "tsx src/db/schema-init.ts",
+    "seed": "tsx src/db/seed-db.ts",
+    "demo": "tsx src/demo.ts",
+    "test": "tsx tests/repository.test.ts"
+  },
+  "dependencies": {
+    "@kubernetes/client-node": "^1.0.0",
+    "@langchain/core": "^0.3.40",
+    "@langchain/langgraph": "^0.2.50",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "neo4j-driver": "^5.28.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.5",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}

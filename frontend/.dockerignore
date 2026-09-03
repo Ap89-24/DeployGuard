@@ -1,0 +1,12 @@
+# Docker build ignore patterns for frontend
+node_modules
+npm-debug.log
+dist
+.env
+.env.local
+.git
+.gitignore
+.vscode
+.idea
+Dockerfile
+README.md

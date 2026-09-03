@@ -1,0 +1,13 @@
+# Docker build ignore patterns for backend
+node_modules
+npm-debug.log
+dist
+.env
+.env.local
+.git
+.gitignore
+.vscode
+.idea
+Dockerfile
+README.md
+tests
