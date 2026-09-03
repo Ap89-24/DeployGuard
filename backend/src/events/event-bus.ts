@@ -17,16 +17,30 @@ export class EventBus extends EventEmitter {
     if (!EventBus.instance) {
       EventBus.instance = new EventBus();
     }
+
     return EventBus.instance;
   }
 
   public publishEvent(event: BaseDomainEvent): void {
-    console.log(`[EventBus] Publishing event '${event.type}' (${event.id}) for provider '${event.provider}'`);
+    console.log(
+      `[EventBus] Publishing event '${event.type}' (${event.id}) for provider '${event.provider}'`,
+    );
+
     this.emit(event.type, event);
     this.emit('*', event);
   }
 
-  public subscribeToEvent(eventType: EventType | '*', handler: (event: BaseDomainEvent) => void): void {
+  public subscribeToEvent(
+    eventType: EventType | '*',
+    handler: (event: BaseDomainEvent) => void,
+  ): void {
     this.on(eventType, handler);
+  }
+
+  public unsubscribeFromEvent(
+    eventType: EventType | '*',
+    handler: (event: BaseDomainEvent) => void,
+  ): void {
+    this.off(eventType, handler);
   }
 }
