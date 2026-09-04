@@ -58,6 +58,47 @@ export function createApiRouter(): Router {
     res.json({ success: true, clusters: [{ id: 'cluster-prod-us-east-1', name: 'eks-prod-us-east-1', environment: 'production', region: 'us-east-1', provider: 'AWS EKS' }] });
   });
 
+  // Kubernetes current state
+  //
+  // GET /api/v1/kubernetes/state
+  //
+  // Returns the latest known Kubernetes deployments and pods.
+  // WebSocket continues to deliver future changes.
+  router.get('/kubernetes/state', (req, res) => {
+    try {
+      const state =
+        k8sWatch.getCurrentState();
+
+      res.json({
+        success: true,
+
+        cluster: {
+          name:
+            process.env.DEPLOYGUARD_CLUSTER_NAME ??
+            'Docker Desktop',
+
+          namespace:
+            'default',
+
+          provider:
+            'kubernetes',
+        },
+
+        ...state,
+      });
+    } catch (err: any) {
+      console.error(
+        '[Kubernetes API] Failed to get current state:',
+        err,
+      );
+
+      res.status(500).json({
+        success: false,
+        error: err.message,
+      });
+    }
+  });
+
   // 6. Services (/api/v1/services)
   router.get('/services', async (req, res) => {
     try {

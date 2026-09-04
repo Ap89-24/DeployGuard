@@ -4,6 +4,7 @@
 
 export type EventType =
   | 'KUBERNETES_POD_RESTART'
+  | 'KUBERNETES_POD_STATE_CHANGE'
   | 'KUBERNETES_DEPLOYMENT_CHANGE'
 
   // Prometheus
