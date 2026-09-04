@@ -8,6 +8,7 @@ import http from 'http';
 import dotenv from 'dotenv';
 import { createApiRouter } from './api/routes.js';
 import { DeployGuardWebSocketServer } from './realtime/websocket.server.js';
+import { PrometheusEngine } from './engines/metrics/prometheus.engine.js';
 
 dotenv.config();
 
@@ -26,7 +27,9 @@ app.use('/api/v1', createApiRouter());
 
 // Create HTTP Server & Attach WebSocket Server
 const server = http.createServer(app);
-const wsServer = new DeployGuardWebSocketServer(server);
+// Initialize real-time infrastructure
+new DeployGuardWebSocketServer(server);
+new PrometheusEngine();
 
 server.listen(PORT, () => {
   console.log(`============================================================================`);
