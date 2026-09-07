@@ -9,13 +9,20 @@ MERGE (o1:Organization {
   createdAt: "2026-01-01T00:00:00Z"
 })
 
+MERGE (o1:Organization {
+  id: "org-acme-corp"
+})
 MERGE (p1:Project {
   id: "proj-ecommerce",
   name: "E-Commerce Platform Core",
   description: "Retail checkout and payment microservices cluster",
   createdAt: "2026-01-01T00:00:00Z"
-})-[:BELONGS_TO_ORG]->(o1)
+})
+MERGE (p1)-[:BELONGS_TO_ORG]->(o1)
 
+MERGE (o1:Organization {
+  id: "org-acme-corp"
+})
 MERGE (cProd:Cluster {
   id: "cluster-prod-us-east-1",
   name: "eks-prod-us-east-1",
@@ -23,8 +30,12 @@ MERGE (cProd:Cluster {
   region: "us-east-1",
   provider: "AWS EKS",
   createdAt: "2026-01-15T00:00:00Z"
-})-[:BELONGS_TO_ORG]->(o1)
+})
+MERGE (cProd)-[:BELONGS_TO_ORG]->(o1)
 
+MERGE (p1:Project {
+  id: "proj-ecommerce"
+})
 MERGE (sAuth:Service {
   id: "svc-auth",
   name: "auth-service",
@@ -34,8 +45,12 @@ MERGE (sAuth:Service {
   language: "TypeScript",
   status: "HEALTHY",
   createdAt: "2026-02-01T00:00:00Z"
-})-[:BELONGS_TO]->(p1)
+})
+MERGE (sAuth)-[:BELONGS_TO]->(p1)
 
+MERGE (p1:Project {
+  id: "proj-ecommerce"
+})
 MERGE (sPayment:Service {
   id: "svc-payment",
   name: "payment-service",
@@ -45,8 +60,12 @@ MERGE (sPayment:Service {
   language: "Go",
   status: "HEALTHY",
   createdAt: "2026-02-01T00:00:00Z"
-})-[:BELONGS_TO]->(p1)
+})
+MERGE (sPayment)-[:BELONGS_TO]->(p1)
 
+MERGE (p1:Project {
+  id: "proj-ecommerce"
+})
 MERGE (sCheckout:Service {
   id: "svc-checkout",
   name: "checkout-service",
@@ -56,8 +75,12 @@ MERGE (sCheckout:Service {
   language: "TypeScript",
   status: "HEALTHY",
   createdAt: "2026-02-01T00:00:00Z"
-})-[:BELONGS_TO]->(p1)
+})
+MERGE (sCheckout)-[:BELONGS_TO]->(p1)
 
+MERGE (p1:Project {
+  id: "proj-ecommerce"
+})
 MERGE (sInventory:Service {
   id: "svc-inventory",
   name: "inventory-service",
@@ -67,9 +90,41 @@ MERGE (sInventory:Service {
   language: "Java",
   status: "HEALTHY",
   createdAt: "2026-02-01T00:00:00Z"
-})-[:BELONGS_TO]->(p1)
+})
+MERGE (sInventory)-[:BELONGS_TO]->(p1)
 
-// Service Dependencies (DEPENDS_ON)
-MERGE (sCheckout)-[:DEPENDS_ON { protocol: "gRPC", isCritical: true, weight: 1.0 }]->(sPayment)
-MERGE (sCheckout)-[:DEPENDS_ON { protocol: "HTTP", isCritical: false, weight: 0.7 }]->(sInventory)
-MERGE (sPayment)-[:DEPENDS_ON { protocol: "gRPC", isCritical: true, weight: 1.0 }]->(sAuth)
+MERGE (sCheckout:Service {
+  id: "svc-checkout"
+})
+MERGE (sPayment:Service {
+  id: "svc-payment"
+})
+MERGE (sCheckout)-[:DEPENDS_ON {
+  protocol: "gRPC",
+  isCritical: true,
+  weight: 1.0
+}]->(sPayment)
+
+MERGE (sCheckout:Service {
+  id: "svc-checkout"
+})
+MERGE (sInventory:Service {
+  id: "svc-inventory"
+})
+MERGE (sCheckout)-[:DEPENDS_ON {
+  protocol: "HTTP",
+  isCritical: false,
+  weight: 0.7
+}]->(sInventory)
+
+MERGE (sPayment:Service {
+  id: "svc-payment"
+})
+MERGE (sAuth:Service {
+  id: "svc-auth"
+})
+MERGE (sPayment)-[:DEPENDS_ON {
+  protocol: "gRPC",
+  isCritical: true,
+  weight: 1.0
+}]->(sAuth)
