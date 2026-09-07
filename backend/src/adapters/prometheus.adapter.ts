@@ -140,7 +140,7 @@ export class PrometheusAdapter {
     } else if (
       availableReplicas < desiredReplicas ||
       readyReplicas < desiredReplicas ||
-      unavailableReplicas > 0
+      (unavailableReplicas ?? 0) > 0
     ) {
       healthStatus = "DEGRADED";
     } else {

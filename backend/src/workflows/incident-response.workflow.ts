@@ -208,11 +208,37 @@ async function executeRecoveryNode(state: DeployGuardWorkflowState) {
   return { executionResult, status: 'RECOVERY_EXECUTED' };
 }
 
-async function verifyRecoveryNode(state: DeployGuardWorkflowState) {
-  console.log(`[LangGraph Workflow] [14/15] verifyRecovery...`);
-  const promMetrics = await promAdapter.queryErrorRate('auth-service');
-  const recoveryVerified = promMetrics.errorRate < 0.01;
-  return { recoveryVerified, status: 'RECOVERY_VERIFIED' };
+async function verifyRecoveryNode(
+  state: DeployGuardWorkflowState,
+) {
+  console.log(
+    `[LangGraph Workflow] [14/15] verifyRecovery...`,
+  );
+
+  const promMetrics =
+    await promAdapter.queryDeploymentHealth(
+      'default',
+      'auth-service',
+    );
+
+  const recoveryVerified =
+    promMetrics.healthStatus === 'HEALTHY' &&
+    promMetrics.availableReplicas ===
+      promMetrics.desiredReplicas &&
+    promMetrics.readyReplicas ===
+      promMetrics.desiredReplicas &&
+    promMetrics.unavailableReplicas === 0;
+
+  console.log(
+    `[LangGraph Workflow] Recovery verification: ${
+      recoveryVerified ? 'PASSED' : 'FAILED'
+    }`,
+  );
+
+  return {
+    recoveryVerified,
+    status: 'RECOVERY_VERIFIED',
+  };
 }
 
 async function closeIncidentNode(state: DeployGuardWorkflowState) {

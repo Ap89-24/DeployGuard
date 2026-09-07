@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import { createApiRouter } from './api/routes.js';
 import { DeployGuardWebSocketServer } from './realtime/websocket.server.js';
 import { PrometheusEngine } from './engines/metrics/prometheus.engine.js';
+import { Neo4jPersistenceEngine } from './engines/persistence/neo4j-persistence.engine.js';
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use(express.json());
 app.get('/health', (req, res) => res.json({ status: 'ok', service: 'deployguard-backend', timestamp: new Date() }));
 app.get('/ready', (req, res) => res.json({ ready: true, neo4j: 'connected', websocket: 'active' }));
 
+new Neo4jPersistenceEngine();
 // Mount 17 Versioned REST API Controllers (/api/v1/*)
 app.use('/api/v1', createApiRouter());
 

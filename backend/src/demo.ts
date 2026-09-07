@@ -10,7 +10,7 @@ import { BlastRadiusRepository } from './repositories/blast-radius.repository.js
 import { initializeNeo4jSchema } from './db/schema-init.js';
 import { closeNeo4jDriver } from './config/neo4j.js';
 import { generateMockEmbedding } from './utils/vector.js';
-import { buildDeployGuardWorkflow } from './workflows/incident-response.workflow.ts';
+import { buildDeployGuardWorkflow } from './workflows/incident-response.workflow.js';
 
 async function runBackendDemo() {
   console.log('============================================================================');

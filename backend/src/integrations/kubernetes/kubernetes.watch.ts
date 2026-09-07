@@ -50,7 +50,7 @@ export class KubernetesWatch {
 
   private isWatching = false;
 
-  private readonly watchers: k8s.AbortController[] = [];
+  private readonly watchers: AbortController[] = [];
 
   /**
    * Stores the previous meaningful observation for each Pod.
@@ -775,7 +775,7 @@ export class KubernetesWatch {
     this.eventBus.publishEvent({
       id:
         `k8s-pod-restart-` +
-        `${pod.uid ?? podName}-` +
+        `${pod.metadata?.uid ?? podName}-` +
         `${Date.now()}`,
 
       type:
@@ -886,7 +886,7 @@ export class KubernetesWatch {
     this.eventBus.publishEvent({
       id:
         `k8s-pod-state-` +
-        `${pod.uid ?? podName}-` +
+        `${pod.metadata?.uid ?? podName}-` +
         `${Date.now()}`,
 
       type:
@@ -1047,7 +1047,7 @@ export class KubernetesWatch {
     const deploymentEvent = {
       id:
         `k8s-deployment-` +
-        `${deployment.uid ?? deploymentName}-` +
+        `${deployment.metadata?.uid ?? deploymentName}-` +
         `${Date.now()}`,
 
       type:

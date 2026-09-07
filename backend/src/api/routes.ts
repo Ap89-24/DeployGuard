@@ -211,7 +211,7 @@ export function createApiRouter(): Router {
   router.post('/workflows/trigger', async (req, res) => {
     try {
       // Emit real-time K8s pod restart event to WebSockets & EventBus!
-      k8sWatch.emitPodRestartEvent('auth-service-v2.5.0-pod-x92', 'svc-auth', 3);
+      //k8sWatch.emitPodRestartEvent('auth-service-v2.5.0-pod-x92', 'svc-auth', 3);
 
       const workflow = buildDeployGuardWorkflow();
       const embedding = generateMockEmbedding('JWT token RSA signature failure');
