@@ -4,7 +4,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { executeCypher, verifyNeo4jConnection, closeNeo4jDriver } from '../config/neo4j.js';
 import { generateMockEmbedding } from '../utils/vector.js';
 
@@ -62,7 +62,11 @@ export async function seedDatabase(): Promise<void> {
   console.log('----------------------------------------------------------------------------');
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const isMainModule =
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isMainModule) {
   seedDatabase()
     .then(() => closeNeo4jDriver())
     .catch((err) => {

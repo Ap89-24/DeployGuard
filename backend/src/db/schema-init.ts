@@ -2,6 +2,7 @@
 // DeployGuard AI - Database Schema & Vector Index Initialization
 // ============================================================================
 
+import { pathToFileURL } from 'url';
 import { executeCypher, verifyNeo4jConnection, closeNeo4jDriver } from '../config/neo4j.js';
 import { EMBEDDING_DIMENSION } from '../utils/vector.js';
 
@@ -63,7 +64,11 @@ export async function initializeNeo4jSchema(): Promise<void> {
   console.log('----------------------------------------------------------------------------');
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const isMainModule =
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isMainModule) {
   initializeNeo4jSchema()
     .then(() => closeNeo4jDriver())
     .catch((err) => {
