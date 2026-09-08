@@ -178,8 +178,8 @@ SET
   dAuth.unavailableReplicas = 0,
   dAuth.createdAt = "2026-02-01T00:00:00Z";
 
-MERGE (dAuth)-[:DEPLOYED_TO]->(cProd);
-MERGE (dAuth)-[:DEPLOYED_SERVICE]->(sAuth);
+MERGE (dAuth)-[:DEPLOYED_TO]->(cProd)
+MERGE (dAuth)-[:DEPLOYED_SERVICE]->(sAuth)
 
 
 MERGE (dPayment:Deployment {
@@ -196,8 +196,8 @@ SET
   dPayment.unavailableReplicas = 0,
   dPayment.createdAt = "2026-02-01T00:00:00Z";
 
-MERGE (dPayment)-[:DEPLOYED_TO]->(cProd);
-MERGE (dPayment)-[:DEPLOYED_SERVICE]->(sPayment);
+MERGE (dPayment)-[:DEPLOYED_TO]->(cProd)
+MERGE (dPayment)-[:DEPLOYED_SERVICE]->(sPayment)
 
 
 MERGE (dCheckout:Deployment {
@@ -214,8 +214,8 @@ SET
   dCheckout.unavailableReplicas = 0,
   dCheckout.createdAt = "2026-02-01T00:00:00Z";
 
-MERGE (dCheckout)-[:DEPLOYED_TO]->(cProd);
-MERGE (dCheckout)-[:DEPLOYED_SERVICE]->(sCheckout);
+MERGE (dCheckout)-[:DEPLOYED_TO]->(cProd)
+MERGE (dCheckout)-[:DEPLOYED_SERVICE]->(sCheckout)
 
 
 MERGE (dInventory:Deployment {
@@ -232,5 +232,5 @@ SET
   dInventory.unavailableReplicas = 0,
   dInventory.createdAt = "2026-02-01T00:00:00Z";
 
-MERGE (dInventory)-[:DEPLOYED_TO]->(cProd);
-MERGE (dInventory)-[:DEPLOYED_SERVICE]->(sInventory);
+MERGE (dInventory)-[:DEPLOYED_TO]->(cProd)
+MERGE (dInventory)-[:DEPLOYED_SERVICE]->(sInventory)
