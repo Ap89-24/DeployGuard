@@ -144,136 +144,141 @@ export class Neo4jPersistenceEngine {
   /**
    * Persist a Kubernetes Deployment observation.
    */
-  private async persistKubernetesDeployment(
-    event: BaseDomainEvent,
-  ): Promise<void> {
-    try {
-      const payload =
-        (event.payload ?? {}) as EventPayload;
+  /**
+ * Persist a Kubernetes Deployment observation.
+ */
+private async persistKubernetesDeployment(
+  event: BaseDomainEvent,
+): Promise<void> {
+  try {
+    const payload =
+      (event.payload ?? {}) as EventPayload;
 
-      const organizationId =
-        event.organizationId;
+    const organizationId =
+      event.organizationId;
 
-      const namespace =
-        payload.namespace ?? 'default';
+    const namespace =
+      payload.namespace ?? 'default';
 
-      const deploymentName =
-        payload.deploymentId ??
-        event.deploymentId;
+    const deploymentName =
+      payload.deploymentId ??
+      event.deploymentId;
 
-      if (!deploymentName) {
-        console.warn(
-          '[Neo4j Persistence] Deployment event has no deploymentId.',
-        );
-        return;
-      }
-
-      const serviceId =
-        event.serviceId ??
-        payload.serviceId ??
-        deploymentName;
-
-      const clusterId =
-        process.env.DEPLOYGUARD_CLUSTER_ID ??
-        'cluster-docker-desktop';
-
-      const deploymentId =
-        `${organizationId}:${namespace}:${deploymentName}`;
-
-      await this.ensureCluster(
-        organizationId,
-        clusterId,
-        namespace,
+    if (!deploymentName) {
+      console.warn(
+        '[Neo4j Persistence] Deployment event has no deploymentId.',
       );
-
-      await this.ensureService(
-        organizationId,
-        serviceId,
-      );
-
-      await executeCypher(
-        `
-        MATCH (c:Cluster {id: $clusterId})
-        MATCH (s:Service {id: $serviceId})
-
-        MERGE (d:Deployment {id: $deploymentId})
-        ON CREATE SET
-          d.createdAt = $timestamp
-
-        SET
-          d.version = $version,
-          d.status = $status,
-          d.environment = 'development',
-          d.namespace = $namespace,
-          d.revision = $revision,
-          d.desiredReplicas = $desiredReplicas,
-          d.availableReplicas = $availableReplicas,
-          d.readyReplicas = $readyReplicas,
-          d.unavailableReplicas = $unavailableReplicas,
-          d.updatedReplicas = $updatedReplicas,
-          d.generation = $generation,
-          d.observedGeneration = $observedGeneration,
-          d.updatedAt = $timestamp,
-          d.lastEventId = $eventId
-
-        MERGE (d)-[:DEPLOYED_TO]->(c)
-        MERGE (d)-[:DEPLOYED_SERVICE]->(s)
-
-        MERGE (e:Evidence {id: $eventId})
-        SET
-          e.type = 'deployment',
-          e.source = 'kubernetes',
-          e.timestamp = $timestamp,
-          e.severity =
-            CASE
-              WHEN $status IN ['DEGRADED', 'SCALED_TO_ZERO']
-                THEN 'HIGH'
-              WHEN $status = 'ROLLING_OUT'
-                THEN 'MEDIUM'
-              ELSE 'INFO'
-            END,
-          e.value = $status,
-          e.confidence = 1.0,
-          e.metadata = $metadata
-
-        MERGE (e)-[:ABOUT_DEPLOYMENT]->(d)
-        MERGE (e)-[:ABOUT_SERVICE]->(s)
-        `,
-        {
-          clusterId,
-          serviceId,
-          deploymentId,
-          eventId: event.id,
-          version: payload.version ?? 'unknown',
-          status: payload.status ?? 'UNKNOWN',
-          namespace,
-          revision: payload.revision ?? null,
-          desiredReplicas: payload.desiredReplicas ?? 0,
-          availableReplicas: payload.availableReplicas ?? 0,
-          readyReplicas: payload.readyReplicas ?? 0,
-          unavailableReplicas:
-            payload.unavailableReplicas ?? 0,
-          updatedReplicas:
-            payload.updatedReplicas ?? 0,
-          generation:
-            payload.generation ?? null,
-          observedGeneration:
-            payload.observedGeneration ?? null,
-          timestamp: event.timestamp,
-          metadata: JSON.stringify(payload),
-        },
-      );
-
-      console.log(
-        `[Neo4j Persistence] Deployment persisted: ${deploymentId}`,
-      );
-    } catch (error) {
-      console.error(
-        '[Neo4j Persistence] Failed to persist deployment event:',
-        error,
-      );
+      return;
     }
+
+    const serviceId =
+      event.serviceId ??
+      payload.serviceId ??
+      deploymentName;
+
+    const clusterId =
+      process.env.DEPLOYGUARD_CLUSTER_ID ??
+      'cluster-docker-desktop';
+
+    const deploymentId =
+      `${organizationId}:${namespace}:${deploymentName}`;
+
+    await this.ensureCluster(
+      organizationId,
+      clusterId,
+      namespace,
+    );
+
+    await this.ensureService(
+      organizationId,
+      serviceId,
+    );
+
+    await executeCypher(
+      `
+      MATCH (c:Cluster {id: $clusterId})
+      MATCH (s:Service {id: $serviceId})
+
+      MERGE (d:Deployment {id: $deploymentId})
+      ON CREATE SET
+        d.createdAt = $timestamp
+
+      SET
+        d.name = $deploymentName,
+        d.version = $version,
+        d.status = $status,
+        d.environment = 'development',
+        d.namespace = $namespace,
+        d.revision = $revision,
+        d.desiredReplicas = $desiredReplicas,
+        d.availableReplicas = $availableReplicas,
+        d.readyReplicas = $readyReplicas,
+        d.unavailableReplicas = $unavailableReplicas,
+        d.updatedReplicas = $updatedReplicas,
+        d.generation = $generation,
+        d.observedGeneration = $observedGeneration,
+        d.updatedAt = $timestamp,
+        d.lastEventId = $eventId
+
+      MERGE (d)-[:DEPLOYED_TO]->(c)
+      MERGE (d)-[:DEPLOYED_SERVICE]->(s)
+
+      MERGE (e:Evidence {id: $eventId})
+      SET
+        e.type = 'deployment',
+        e.source = 'kubernetes',
+        e.timestamp = $timestamp,
+        e.severity =
+          CASE
+            WHEN $status IN ['DEGRADED', 'SCALED_TO_ZERO']
+              THEN 'HIGH'
+            WHEN $status = 'ROLLING_OUT'
+              THEN 'MEDIUM'
+            ELSE 'INFO'
+          END,
+        e.value = $status,
+        e.confidence = 1.0,
+        e.metadata = $metadata
+
+      MERGE (e)-[:ABOUT_DEPLOYMENT]->(d)
+      MERGE (e)-[:ABOUT_SERVICE]->(s)
+      `,
+      {
+        clusterId,
+        serviceId,
+        deploymentId,
+        deploymentName,
+        eventId: event.id,
+        version: payload.version ?? 'unknown',
+        status: payload.status ?? 'UNKNOWN',
+        namespace,
+        revision: payload.revision ?? null,
+        desiredReplicas: payload.desiredReplicas ?? 0,
+        availableReplicas: payload.availableReplicas ?? 0,
+        readyReplicas: payload.readyReplicas ?? 0,
+        unavailableReplicas:
+          payload.unavailableReplicas ?? 0,
+        updatedReplicas:
+          payload.updatedReplicas ?? 0,
+        generation:
+          payload.generation ?? null,
+        observedGeneration:
+          payload.observedGeneration ?? null,
+        timestamp: event.timestamp,
+        metadata: JSON.stringify(payload),
+      },
+    );
+
+    console.log(
+      `[Neo4j Persistence] Deployment persisted: ${deploymentId}`,
+    );
+  } catch (error) {
+    console.error(
+      '[Neo4j Persistence] Failed to persist deployment event:',
+      error,
+    );
   }
+}
 
   /**
    * Persist a Kubernetes Pod state transition.
@@ -494,75 +499,95 @@ export class Neo4jPersistenceEngine {
     }
   }
 
-  /**
-   * Persist Prometheus observations/anomalies as Evidence.
-   */
-  private async persistPrometheusEvidence(
-    event: BaseDomainEvent,
-  ): Promise<void> {
-    try {
-      const payload =
-        (event.payload ?? {}) as EventPayload;
+/**
+ * Persist Prometheus observations/anomalies as Evidence.
+ */
+private async persistPrometheusEvidence(
+  event: BaseDomainEvent,
+): Promise<void> {
+  try {
+    const payload =
+      (event.payload ?? {}) as EventPayload;
 
-      const serviceId =
-        event.serviceId ??
-        payload.serviceId;
+    const serviceId =
+      event.serviceId ??
+      payload.serviceId;
 
-      if (!serviceId) {
-        console.warn(
-          '[Neo4j Persistence] Prometheus event has no serviceId.',
-        );
-        return;
-      }
-
-      const organizationId =
-        event.organizationId;
-
-      await this.ensureService(
-        organizationId,
-        serviceId,
+    if (!serviceId) {
+      console.warn(
+        '[Neo4j Persistence] Prometheus event has no serviceId.',
       );
-
-      const severity =
-        event.type ===
-        'PROMETHEUS_METRIC_ANOMALY'
-          ? 'HIGH'
-          : 'INFO';
-
-      await executeCypher(
-        `
-        MATCH (s:Service {id: $serviceId})
-
-        MERGE (e:Evidence {id: $eventId})
-        SET
-          e.type = 'metric',
-          e.source = 'prometheus',
-          e.timestamp = $timestamp,
-          e.severity = $severity,
-          e.value = $value,
-          e.confidence = 1.0,
-          e.metadata = $metadata
-
-        MERGE (e)-[:ABOUT_SERVICE]->(s)
-        `,
-        {
-          serviceId,
-          eventId: event.id,
-          timestamp: event.timestamp,
-          severity,
-          value: JSON.stringify(payload),
-          metadata: JSON.stringify(payload),
-        },
-      );
-
-      console.log(
-        `[Neo4j Persistence] Prometheus evidence persisted: ${event.id}`,
-      );
-    } catch (error) {
-      console.error(
-        '[Neo4j Persistence] Failed to persist Prometheus evidence:',
-        error,
-      );
+      return;
     }
+
+    const organizationId =
+      event.organizationId;
+
+    const namespace =
+      payload.namespace ?? 'default';
+
+    const deploymentName =
+      payload.deployment ??
+      payload.deploymentName;
+
+    if (!deploymentName) {
+      console.warn(
+        '[Neo4j Persistence] Prometheus event has no deployment name.',
+      );
+      return;
+    }
+
+    const deploymentId =
+      `${organizationId}:${namespace}:${deploymentName}`;
+
+    await this.ensureService(
+      organizationId,
+      serviceId,
+    );
+
+    const severity =
+      event.type ===
+      'PROMETHEUS_METRIC_ANOMALY'
+        ? 'HIGH'
+        : 'INFO';
+
+    await executeCypher(
+      `
+      MATCH (s:Service {id: $serviceId})
+      MATCH (d:Deployment {id: $deploymentId})
+
+      MERGE (e:Evidence {id: $eventId})
+      SET
+        e.type = 'metric',
+        e.source = 'prometheus',
+        e.timestamp = $timestamp,
+        e.severity = $severity,
+        e.value = $value,
+        e.confidence = 1.0,
+        e.metadata = $metadata
+
+      MERGE (e)-[:ABOUT_SERVICE]->(s)
+      MERGE (e)-[:ABOUT_DEPLOYMENT]->(d)
+      `,
+      {
+        serviceId,
+        deploymentId,
+        eventId: event.id,
+        timestamp: event.timestamp,
+        severity,
+        value: JSON.stringify(payload),
+        metadata: JSON.stringify(payload),
+      },
+    );
+
+    console.log(
+      `[Neo4j Persistence] Prometheus evidence persisted: ${event.id}`,
+    );
+  } catch (error) {
+    console.error(
+      '[Neo4j Persistence] Failed to persist Prometheus evidence:',
+      error,
+    );
   }
+}
 }
