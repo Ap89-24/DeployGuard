@@ -509,17 +509,6 @@ private async persistPrometheusEvidence(
     const payload =
       (event.payload ?? {}) as EventPayload;
 
-    const serviceId =
-      event.serviceId ??
-      payload.serviceId;
-
-    if (!serviceId) {
-      console.warn(
-        '[Neo4j Persistence] Prometheus event has no serviceId.',
-      );
-      return;
-    }
-
     const organizationId =
       event.organizationId;
 
@@ -540,10 +529,31 @@ private async persistPrometheusEvidence(
     const deploymentId =
       `${organizationId}:${namespace}:${deploymentName}`;
 
+    const serviceId =
+      event.serviceId ??
+      payload.serviceId ??
+      deploymentName;
+
+    /*
+     * Prometheus evidence is associated with a real Kubernetes
+     * Deployment. If the Kubernetes event has not been persisted yet,
+     * create the deployment topology here as well.
+     */
+    await this.ensureCluster(
+      organizationId,
+      process.env.DEPLOYGUARD_CLUSTER_ID ??
+        'cluster-docker-desktop',
+      namespace,
+    );
+
     await this.ensureService(
       organizationId,
       serviceId,
     );
+
+    const clusterId =
+      process.env.DEPLOYGUARD_CLUSTER_ID ??
+      'cluster-docker-desktop';
 
     const severity =
       event.type ===
@@ -551,12 +561,40 @@ private async persistPrometheusEvidence(
         ? 'HIGH'
         : 'INFO';
 
+    const deploymentHealth =
+      payload.deploymentHealth ?? {};
+
     await executeCypher(
       `
+      MATCH (c:Cluster {id: $clusterId})
       MATCH (s:Service {id: $serviceId})
-      MATCH (d:Deployment {id: $deploymentId})
 
-      MERGE (e:Evidence {id: $eventId})
+      MERGE (d:Deployment {
+        id: $deploymentId
+      })
+      ON CREATE SET
+        d.name = $deploymentName,
+        d.namespace = $namespace,
+        d.environment = 'development',
+        d.status = 'UNKNOWN',
+        d.createdAt = $timestamp
+
+      SET
+        d.name = $deploymentName,
+        d.namespace = $namespace,
+        d.desiredReplicas = $desiredReplicas,
+        d.availableReplicas = $availableReplicas,
+        d.readyReplicas = $readyReplicas,
+        d.unavailableReplicas = $unavailableReplicas,
+        d.status = $healthStatus,
+        d.updatedAt = $timestamp
+
+      MERGE (d)-[:DEPLOYED_TO]->(c)
+      MERGE (d)-[:DEPLOYED_SERVICE]->(s)
+
+      MERGE (e:Evidence {
+        id: $eventId
+      })
       SET
         e.type = 'metric',
         e.source = 'prometheus',
@@ -570,8 +608,21 @@ private async persistPrometheusEvidence(
       MERGE (e)-[:ABOUT_DEPLOYMENT]->(d)
       `,
       {
+        clusterId,
         serviceId,
         deploymentId,
+        deploymentName,
+        namespace,
+        desiredReplicas:
+          deploymentHealth.desiredReplicas ?? 0,
+        availableReplicas:
+          deploymentHealth.availableReplicas ?? 0,
+        readyReplicas:
+          deploymentHealth.readyReplicas ?? 0,
+        unavailableReplicas:
+          deploymentHealth.unavailableReplicas ?? 0,
+        healthStatus:
+          deploymentHealth.healthStatus ?? 'UNKNOWN',
         eventId: event.id,
         timestamp: event.timestamp,
         severity,
