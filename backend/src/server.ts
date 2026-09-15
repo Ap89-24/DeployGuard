@@ -10,6 +10,7 @@ import { createApiRouter } from './api/routes.js';
 import { DeployGuardWebSocketServer } from './realtime/websocket.server.js';
 import { PrometheusEngine } from './engines/metrics/prometheus.engine.js';
 import { Neo4jPersistenceEngine } from './engines/persistence/neo4j-persistence.engine.js';
+import { LokiEngine } from './engines/logs/loki.engine.js';
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ const server = http.createServer(app);
 // Initialize real-time infrastructure
 new DeployGuardWebSocketServer(server);
 new PrometheusEngine();
+new LokiEngine();
 
 server.listen(PORT, () => {
   console.log(`============================================================================`);
