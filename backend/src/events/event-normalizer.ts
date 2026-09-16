@@ -18,7 +18,11 @@ export class EventNormalizer {
       value = `Prometheus Metric Regression: HTTP 500 error rate elevated to ${event.payload.errorRate || '18%'}`;
     } else if (event.type === 'LOKI_LOG_EXCEPTION') {
       severity = 'critical';
-      value = `Loki Log Exception: ${event.payload.exception || 'NullPointerException in JWT verification'}`;
+      value = `Loki Log Exception: ${
+         event.payload.line ||
+         event.payload.exception ||
+        'Unknown Loki log exception'
+}`;
     }
 
     return {
