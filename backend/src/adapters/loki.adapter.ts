@@ -89,8 +89,7 @@ export class LokiAdapter {
      * are promoted.
      */
     const escapedServiceName = this.escapeLogQLString(serviceName);
-
-    const query = `{cluster="${this.getClusterLabel()}"} |= "${escapedServiceName}"`;
+    const query = `{cluster="${this.getClusterLabel()}", namespace="default", app="${escapedServiceName}"}`;
 
     const params = new URLSearchParams({
       query,
